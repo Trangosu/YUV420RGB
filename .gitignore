@@ -45,3 +45,11 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+.vs/YUV420RGB/v14/.suo
+*.obj
+*.enc
+YUV420RGB/x64/Debug/vc140.idb
+*.pdb
+*.tlog
+*.log
+YUV420RGB/YUV420TORGB.zip

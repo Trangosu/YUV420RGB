@@ -18,13 +18,15 @@ class Decoder
 			int vbv_buffer_size_value;
 			bool constrained_parameters_flag;
 			bool load_intra_quantiser_matrix;
-			uint8_t load_non_intra_quantiser_matrix[64];
+			uint8_t intra_quantiser_matrix[64];
+         bool load_non_intra_quantiser_matrix;
 			uint8_t non_intra_quantiser_matrix[64];
 
 		} MPEG2_SEQUENCE_HEADER;
 
 	private :
-		bool decodeSequenceHeader(const uint8_t *pBuffer, int nBufferSize);
+		bool decodeSequenceHeader(const uint8_t *pBuffer, int nBufferSize, int& nSequenceSize);
+      bool decodeExtensionStartCode(const uint8_t *pBuffer, int nBufferSize, int& nSequenceSize);
 
 	private :
 		int m_nDataSize;

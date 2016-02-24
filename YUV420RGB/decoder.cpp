@@ -33,43 +33,53 @@ void Decoder::decode(uint8_t *pBuffer, int nBufferSize)
 {
 	const uint8_t startSequence[3] = { 0x00, 0x00, 0x01 };
 
-	int index = contains(pBuffer, nBufferSize, startSequence, sizeof(startSequence));
+	int nOffset = contains(pBuffer, nBufferSize, startSequence, sizeof(startSequence));
 
-	if (index >= 0)
+	if (nOffset >= 0)
 	{
 		std::cout << "Found start sequence !" << std::endl;
 	}
 
-	uint8_t bStartCode = pBuffer[index + 3];
+   while (nOffset < nBufferSize - 4)
+   {
+      uint8_t bStartCode = pBuffer[nOffset + 3];
+      int nSize = 0;
 
-	switch (bStartCode)
-	{
-	case 0x00: //picture_start_code
-		break;
-	case 0xB0: //reserved
-		break;
-	case 0xB1: //reserved
-		break;
-	case 0xB2: //user_data_start_code
-		break;
-	case 0xB3: //sequence_header_code
-		decodeSequenceHeader(pBuffer + index, nBufferSize - index);
-		break;
-	case 0xB4: //sequence_error_code
-		break;
-	case 0xB5: //extension_start_code
-		break;
-	case 0xB6: //reserved
-		break;
-	case 0xB7: //sequence_end_code
-		break;
-	case 0xB8: //group_start_code
-		break;
-	}
+      switch (bStartCode)
+      {
+      case 0x00: //picture_start_code
+         break;
+      case 0xB0: //reserved
+         break;
+      case 0xB1: //reserved
+         break;
+      case 0xB2: //user_data_start_code
+         break;
+      case 0xB3: //sequence_header_code
+         decodeSequenceHeader(pBuffer + nOffset, nBufferSize - nOffset, nSize);
+         break;
+      case 0xB4: //sequence_error_code
+         break;
+      case 0xB5: //extension_start_code
+         decodeExtensionStartCode(pBuffer + nOffset, nBufferSize - nOffset, nSize);
+         break;
+      case 0xB6: //reserved
+         break;
+      case 0xB7: //sequence_end_code
+         break;
+      case 0xB8: //group_start_code
+         break;
+      default:
+         assert(!"Invalid start code. ");
+         break;
+      }
+
+      nOffset += nSize;
+   }
 	
 }
 
-bool Decoder::decodeSequenceHeader(const uint8_t *pBuffer, int nBufferSize)
+bool Decoder::decodeSequenceHeader(const uint8_t *pBuffer, int nBufferSize, int& nSequenceSize)
 {
 	MPEG2_SEQUENCE_HEADER seqHeader;
 	memset(&seqHeader, 0, sizeof(seqHeader));
@@ -79,8 +89,9 @@ bool Decoder::decodeSequenceHeader(const uint8_t *pBuffer, int nBufferSize)
 	if (!pBuffer || nBufferSize <= 4 || memcmp(pBuffer, startSequenceHeader, 4))
 		return false;
 
-	BitReader bitReader(pBuffer + 4, nBufferSize - 4);
+	BitReader bitReader(pBuffer, nBufferSize);
 
+   bitReader.readBits(32); //start sequence header
 
 	seqHeader.horizontal_size_value = bitReader.readBits(12);
 	seqHeader.vertical_size_value = bitReader.readBits(12);
@@ -91,6 +102,68 @@ bool Decoder::decodeSequenceHeader(const uint8_t *pBuffer, int nBufferSize)
 	seqHeader.vbv_buffer_size_value = bitReader.readBits(10);
 	seqHeader.constrained_parameters_flag = bitReader.readBit();
 	seqHeader.load_intra_quantiser_matrix = bitReader.readBit();
+   if (seqHeader.load_intra_quantiser_matrix)
+   {
+      for (int i = 0; i < sizeof(seqHeader.intra_quantiser_matrix) / sizeof(seqHeader.intra_quantiser_matrix[0]); ++i)
+         seqHeader.intra_quantiser_matrix[i] = bitReader.readByte();
+   }
 
-	return false;
+   seqHeader.load_non_intra_quantiser_matrix = bitReader.readBit();
+   if (seqHeader.load_non_intra_quantiser_matrix)
+   {
+      for (int i = 0; i < sizeof(seqHeader.non_intra_quantiser_matrix) / sizeof(seqHeader.non_intra_quantiser_matrix[0]); ++i)
+         seqHeader.non_intra_quantiser_matrix[i] = bitReader.readByte();
+   }
+
+   nSequenceSize = bitReader.getPosition();
+
+	return true;
+}
+
+bool Decoder::decodeExtensionStartCode(const uint8_t *pBuffer, int nBufferSize, int& nSequenceSize)
+{
+   MPEG2_SEQUENCE_HEADER seqHeader;
+   memset(&seqHeader, 0, sizeof(seqHeader));
+
+   BitReader bitReader(pBuffer, nBufferSize);
+
+   int nNextSequence = bitReader.readBits(32); //start sequence header
+
+   int i = 0;
+   while (nNextSequence == 0x01B5 || nNextSequence == 0x01B2)
+   {
+      if (i != 1)
+      {
+         if (nNextSequence == 0x01B5) //extension_start_code
+         {
+            //extension_data
+            if (i == 0)
+            {
+               uint8_t sequenceId = bitReader.readBits(4, false);
+
+               if (sequenceId == 2) //Sequence Display Extension ID
+               {
+
+               }
+
+               if (sequenceId == 5) //Sequence Scalable Extension ID
+               {
+
+               }
+            }
+         }
+      }
+      else
+      {
+         if (nNextSequence == 0x01B2)
+         {
+            //user_data
+         }
+      }
+
+      nNextSequence = bitReader.readBits(32);
+      ++i;
+   }
+
+   return true;
 }

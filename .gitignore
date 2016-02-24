@@ -53,3 +53,7 @@ YUV420RGB/x64/Debug/vc140.idb
 *.tlog
 *.log
 YUV420RGB/YUV420TORGB.zip
+*.exe
+*.ilk
+*.sdf
+*.sdf

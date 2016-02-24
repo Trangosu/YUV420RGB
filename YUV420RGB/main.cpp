@@ -33,17 +33,29 @@ void decoder(uint8_t *pBuffer)
 
 void main()
 {
-	static const int nBufferSize = 50000;
 	std::ifstream file("grb_2.mpg", std::ios::binary);
-	uint8_t *pData = new uint8_t[nBufferSize];
+	
 	Decoder decoder;
 
 	if (!file.is_open())
 		abort();
 
+   //TODO: This will be an issue with big files, but we'll see later
+
+   std::streampos nFileSize;
+   
+   nFileSize = file.tellg();
+   file.seekg(0, std::ios::end);
+   nFileSize = file.tellg() - nFileSize;
+
+   file.seekg(0);
+
+   uint8_t *pData = new uint8_t[nFileSize];
+
+
 	while (!file.eof())
 	{
-		file.read(reinterpret_cast<char *>(pData), nBufferSize);
+		file.read(reinterpret_cast<char *>(pData), nFileSize);
 		
 		uint8_t a = pData[4];
 		uint8_t b = pData[5];
@@ -56,7 +68,7 @@ void main()
 		test = BitReader::changeEndianness(test);
 		test = test >> 20;
 		
-		decoder.decode(pData, nBufferSize);
+		decoder.decode(pData, nFileSize);
 	}
 
 	delete pData;

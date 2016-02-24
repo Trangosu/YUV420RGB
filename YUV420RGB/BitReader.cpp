@@ -6,17 +6,17 @@ BitReader::BitReader(const uint8_t *pData, int nDataSize, bool isChangeEndiannes
 
 }
 
-bool BitReader::readBit()
+bool BitReader::readBit(bool isChangePosition)
 {
-	return !!readBits(1);
+	return !!readBits(1, isChangePosition);
 }
 
-uint8_t BitReader::readByte()
+uint8_t BitReader::readByte(bool isChangePosition)
 {
-	return static_cast<uint8_t>(readBits(8));
+	return static_cast<uint8_t>(readBits(8), isChangePosition);
 }
 
-uint32_t BitReader::readBits(int nBits)
+uint32_t BitReader::readBits(int nBits, bool isChangePosition)
 {
 	static const int nMaxBits = 32;
 
@@ -42,7 +42,8 @@ uint32_t BitReader::readBits(int nBits)
 	if (nRemoveBits + nBits > 32)
 		assert(!"It's time to fix this function");
 	
-	m_nPosition += nBits;
+   if (isChangePosition)
+	   m_nPosition += nBits;
 
 
 	if (m_isChangeEndianness)

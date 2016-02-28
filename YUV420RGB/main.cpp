@@ -38,7 +38,7 @@ void main()
 	Decoder decoder;
 
 	if (!file.is_open())
-		abort();
+		return;
 
    //TODO: This will be an issue with big files, but we'll see later
 
@@ -52,25 +52,11 @@ void main()
 
    uint8_t *pData = new uint8_t[nFileSize];
 
-
-	while (!file.eof())
-	{
-		file.read(reinterpret_cast<char *>(pData), nFileSize);
+	file.read(reinterpret_cast<char *>(pData), nFileSize);
 		
-		uint8_t a = pData[4];
-		uint8_t b = pData[5];
-		uint8_t c = pData[6];
-		uint8_t d = pData[7];
+	decoder.decode(pData, nFileSize);
 
-		uint32_t test;
-		memcpy(&test, &pData[4], 4);
-
-		test = BitReader::changeEndianness(test);
-		test = test >> 20;
-		
-		decoder.decode(pData, nFileSize);
-	}
-
+   file.close();
 	delete pData;
 }
 

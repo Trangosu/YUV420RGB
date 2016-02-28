@@ -57,3 +57,7 @@ YUV420RGB/YUV420TORGB.zip
 *.ilk
 *.sdf
 *.sdf
+*.sdf
+*.suo
+*.opendb
+*.sdf
